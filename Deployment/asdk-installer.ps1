@@ -1294,12 +1294,15 @@ $Xaml = @'
                                             AutomationProperties.LabeledBy="{Binding ElementName=Control_Restore_Tbl_BackupStorePassword}" Grid.Column="0"/>
                                 <Path x:Name="Control_Restore_Pth_BackupStorePassword" SnapsToDevicePixels="False" StrokeThickness="3" Data="M2,10 L8,16 L15,5" Stroke="#92D050" Margin="300,0,0,0" Visibility="Hidden"/>
                             </Grid>
-                            
-                            <TextBlock x:Name="Control_Restore_Tbl_BackupEncryptionKey" FontSize="16" FontFamily="Segoe UI" Text="Encryption key:" HorizontalAlignment="Left"
-                                    Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox x:Name="Control_Restore_Tbx_BackupEncryptionKey" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                                    AutomationProperties.LabeledBy="{Binding ElementName=Control_Restore_Tbl_BackupEncryptionKey}" Grid.Row="3" Grid.Column="1" Margin="0,10"/>
-                            
+
+                            <TextBlock x:Name="Control_Restore_Tbl_DecryptionCertPassword" FontSize="16" FontFamily="Segoe UI" Text="Backup Decryption Certificate Password:"
+                                    Grid.Row="3" Grid.Column="0" TextWrapping="Wrap" MaxWidth="150" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Grid Grid.Row="3" Grid.Column="1" Margin="0,10">
+                                <PasswordBox x:Name="Control_Restore_Pwb_DecryptionCertPassword" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                                            AutomationProperties.LabeledBy="{Binding ElementName=Control_Restore_Tbl_DecryptionCertPassword}"/>
+                                <Path x:Name="Control_Restore_Pth_DecryptionCertPassword" SnapsToDevicePixels="False" StrokeThickness="3" Data="M2,10 L8,16 L15,5" Stroke="#92D050" Margin="300,0,0,0" Visibility="Hidden"/>
+                            </Grid>
+
                             <TextBlock x:Name="Control_Restore_Tbl_BackupID" FontSize="16" FontFamily="Segoe UI" Text="Backup ID:" HorizontalAlignment="Left"
                                     Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBox x:Name="Control_Restore_Tbx_BackupID" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
@@ -1309,7 +1312,7 @@ $Xaml = @'
                                     Grid.Row="5" Grid.Column="0" TextWrapping="Wrap" MaxWidth="150" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <Grid Grid.Row="5" Grid.Column="1" Margin="0,10">
                                 <PasswordBox x:Name="Control_Restore_Pwb_ExternalCertPassword" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
-                                            AutomationProperties.LabeledBy="{Binding ElementName=Control_Creds_Tbl_LocalAdminPassword}"/>
+                                            AutomationProperties.LabeledBy="{Binding ElementName=Control_Restore_Tbl_ExternalCertPassword}"/>
                                 <Path x:Name="Control_Restore_Pth_ExternalCertPassword" SnapsToDevicePixels="False" StrokeThickness="3" Data="M2,10 L8,16 L15,5" Stroke="#92D050" Margin="300,0,0,0" Visibility="Hidden"/>
                             </Grid>
                         </Grid>
@@ -2105,7 +2108,7 @@ Function F_VerifyFields_Restore {
     if ($syncHash.Control_Restore_Tbx_BackupStorePath.Text -and
         $syncHash.Control_Restore_Tbx_BackupStoreUserName -and
         ($syncHash.Control_Restore_Pwb_BackupStorePassword.Password.Length -gt 0) -and
-        $syncHash.Control_Restore_Tbx_BackupEncryptionKey.Text -and
+        ($syncHash.Control_Restore_Pwb_DecryptionCertPassword.Password.Length -gt 0) -and
         $syncHash.Control_Restore_Tbx_BackupID.Text -and
         ($syncHash.Control_Restore_Pwb_ExternalCertPassword.Password.Length -gt 0))
     {
@@ -2232,16 +2235,16 @@ Function F_Summary {
 
         if ($Script:Restore)
         {
-            $InstallScript += '$backupEncryptionKey = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Tbx_BackupEncryptionKey.Text + "'" + ' -AsPlainText -Force'
+            $InstallScript += '$backupDecryptionCertPassword = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Pwb_DecryptionCertPassword.PasswordChar.ToString() * $syncHash.Control_Restore_Pwb_DecryptionCertPassword.Password.Length + "'" + ' -AsPlainText -Force'
             $InstallScript += "`r`n"
 
-            $InstallScript += '$backupSharePassword = ConvertTo-SecureString ' + "'" + ($syncHash.Control_Restore_Pwb_BackupStorePassword.PasswordChar.ToString() * $syncHash.Control_Restore_Pwb_BackupStorePassword.Password.Length) + "'" + ' -AsPlainText -Force'
+            $InstallScript += '$backupSharePassword = ConvertTo-SecureString ' + "`"" + ($syncHash.Control_Restore_Pwb_BackupStorePassword.PasswordChar.ToString() * $syncHash.Control_Restore_Pwb_BackupStorePassword.Password.Length) + "`"" + ' -AsPlainText -Force'
             $InstallScript += "`r`n"
 
             $InstallScript += '$backupShareCred = New-Object System.Management.Automation.PSCredential(' + "'" + $syncHash.Control_Restore_Tbx_BackupStoreUserName.Text + "'" + ', $backupSharePassword)'
             $InstallScript += "`r`n"
 
-            $InstallScript += '$externalCertPassword = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Pwb_ExternalCertPassword.PasswordChar.ToString() * $syncHash.Control_Restore_Pwb_ExternalCertPassword.Password.Length + "'" + ' -AsPlainText -Force'
+            $InstallScript += '$externalCertPassword = ConvertTo-SecureString ' + "`"" + $syncHash.Control_Restore_Pwb_ExternalCertPassword.PasswordChar.ToString() * $syncHash.Control_Restore_Pwb_ExternalCertPassword.Password.Length + "`"" + ' -AsPlainText -Force'
             $InstallScript += "`r`n"
         }
 
@@ -2293,8 +2296,7 @@ Function F_Summary {
             $InstallScript += $syncHash.Control_Restore_Tbx_BackupStorePath.Text
 
             $InstallScript += ' -BackupStoreCredential $backupShareCred'
-
-            $InstallScript += ' -BackupEncryptionKeyBase64 $backupEncryptionKey'
+            $InstallScript += ' -BackupDecryptionCertPassword $backupDecryptionCertPassword '
 
             $InstallScript += " -BackupId "
             $InstallScript += $syncHash.Control_Restore_Tbx_BackupID.Text
@@ -2347,10 +2349,10 @@ Function F_Install {
 
     if ($Script:Restore)
     {
-        '$backupEncryptionKey = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Tbx_BackupEncryptionKey.Text + "'" + ' -AsPlainText -Force' | Add-Content $filepath
-        '$backupSharePassword = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Pwb_BackupStorePassword.Password + "'" + ' -AsPlainText -Force' | Add-Content $filepath
+        '$backupDecryptionCertPassword = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Pwb_DecryptionCertPassword.Password + "'" + ' -AsPlainText -Force' | Add-Content $filepath
+        '$backupSharePassword = ConvertTo-SecureString ' + "`"" + $syncHash.Control_Restore_Pwb_BackupStorePassword.Password + "`"" + ' -AsPlainText -Force' | Add-Content $filepath
         '$backupShareCred = New-Object System.Management.Automation.PSCredential(' + "'" + $syncHash.Control_Restore_Tbx_BackupStoreUserName.Text + "'" + ', $backupSharePassword)' | Add-Content $filepath
-        '$externalCertPassword = ConvertTo-SecureString ' + "'" + $syncHash.Control_Restore_Pwb_ExternalCertPassword.Password + "'" + ' -AsPlainText -Force' | Add-Content $filepath
+        '$externalCertPassword = ConvertTo-SecureString ' + "`"" + $syncHash.Control_Restore_Pwb_ExternalCertPassword.Password + "`"" + ' -AsPlainText -Force' | Add-Content $filepath
     }
 
     "cd C:\CloudDeployment\Setup" |  Add-Content $filepath
@@ -2394,7 +2396,7 @@ Function F_Install {
     {
         ' -BackupStorePath ' + '"' + $syncHash.Control_Restore_Tbx_BackupStorePath.Text + '"' | Add-Content $filepath -NoNewline
         ' -BackupStoreCredential $backupShareCred' | Add-Content $filepath -NoNewline
-        ' -BackupEncryptionKeyBase64 $backupEncryptionKey' | Add-Content $filepath -NoNewline
+        ' -BackupDecryptionCertPassword $backupDecryptionCertPassword' | Add-Content $filepath -NoNewline
         ' -BackupId ' + '"' + $syncHash.Control_Restore_Tbx_BackupID.Text + '"' | Add-Content $filepath -NoNewline
         ' -ExternalCertPassword $externalCertPassword' | Add-Content $filepath -NoNewline
     }
@@ -2913,8 +2915,8 @@ $syncHash.Control_Restore_Pwb_BackupStorePassword.Add_PasswordChanged({
     F_VerifyFields_Restore
 })
 
-$syncHash.Control_Restore_Tbx_BackupEncryptionKey.Add_TextChanged({
-    F_Regex -field 'Control_Restore_Tbx_BackupEncryptionKey'
+$syncHash.Control_Restore_Pwb_DecryptionCertPassword.Add_PasswordChanged({
+    F_Regex -field 'Control_Restore_Pwb_DecryptionCertPassword'
     F_VerifyFields_Restore
 })
 
